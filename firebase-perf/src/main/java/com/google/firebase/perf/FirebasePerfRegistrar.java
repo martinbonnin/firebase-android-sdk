@@ -34,6 +34,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.injection.components.DaggerFirebasePerformanceComponent;
 import com.google.firebase.perf.injection.components.FirebasePerformanceComponent;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.metrics.FirebasePerfInternalTracer;
 import com.google.firebase.perf.session.SessionManager;
@@ -55,6 +56,7 @@ import java.util.List;
  */
 @Keep
 public class FirebasePerfRegistrar implements ComponentRegistrar {
+  private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   @Override
   @Keep
@@ -87,6 +89,8 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
       ComponentContainer container) {
     Context appContext = container.get(Context.class);
     Provider<StartupTime> startupTimeProvider = container.getProvider(StartupTime.class);
+
+    logger.setLogcatEnabled(true);
 
     // Initialize ConfigResolver early for accessing device caching layer.
     ConfigResolver.getInstance().setApplicationContext(appContext);

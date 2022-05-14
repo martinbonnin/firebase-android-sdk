@@ -78,6 +78,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private boolean hasFrameMetricsAggregator = false;
 
   public static AppStateMonitor getInstance() {
+
+    logger.info("AppStateMonitor requested: %s", Utils.invoker());
+
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
         if (instance == null) {
@@ -89,6 +92,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   AppStateMonitor(TransportManager transportManager, Clock clock) {
+    Timer timer = new Timer();
+
     this.transportManager = transportManager;
     this.clock = clock;
     configResolver = ConfigResolver.getInstance();
@@ -96,6 +101,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (hasFrameMetricsAggregator) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
+
+    logger.info("AppStateMonitor initialized in %s us", timer.getDurationMicros());
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {

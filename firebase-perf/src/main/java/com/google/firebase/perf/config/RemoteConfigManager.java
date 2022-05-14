@@ -24,6 +24,7 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
@@ -88,6 +89,8 @@ public class RemoteConfigManager {
       Executor executor,
       FirebaseRemoteConfig firebaseRemoteConfig,
       long appStartConfigFetchDelayInMs) {
+    Timer timer = new Timer();
+
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
     this.allRcConfigMap =
@@ -95,10 +98,14 @@ public class RemoteConfigManager {
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
     this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
+
+    logger.info("RemoteConfigManager initialized in %s us", timer.getDurationMicros());
+
   }
 
   /** Gets the singleton instance. */
   public static RemoteConfigManager getInstance() {
+    logger.info("RemoteConfigManager requested %s", Utils.invoker());
     return instance;
   }
 

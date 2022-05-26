@@ -34,48 +34,12 @@ public class AggregateQuery {
   }
 
   @NonNull
-  public Task<AggregateQuerySnapshot> get(@NonNull Source source) {
+  public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
     throw new RuntimeException("not implemented");
   }
 
   @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull EventListener<AggregateQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Executor executor, @NonNull EventListener<AggregateQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Activity activity, @NonNull EventListener<AggregateQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull MetadataChanges metadataChanges,
-      @NonNull EventListener<AggregateQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Executor executor,
-      @NonNull MetadataChanges metadataChanges,
-      @NonNull EventListener<AggregateQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Activity activity,
-      @NonNull MetadataChanges metadataChanges,
-      @NonNull EventListener<AggregateQuerySnapshot> listener) {
+  public ListenConfig listen() {
     throw new RuntimeException("not implemented");
   }
 
@@ -87,5 +51,31 @@ public class AggregateQuery {
   @Override
   public boolean equals(Object obj) {
     throw new RuntimeException("not implemented");
+  }
+
+  public static final class ListenConfig {
+
+    private ListenConfig() {}
+
+    @NonNull
+    public ListenConfig executeCallbacksOn(@NonNull Executor executor) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public ListenConfig scopeTo(@NonNull Activity executor) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public ListenConfig includeMetadataOnlyChanges(boolean includeMetadataOnlyChanges) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public ListenerRegistration startDirectFromServer(
+        @NonNull EventListener<AggregateQuerySnapshot> listener) {
+      throw new RuntimeException("not implemented");
+    }
   }
 }

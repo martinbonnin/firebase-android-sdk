@@ -35,48 +35,12 @@ public class GroupByQuery {
   }
 
   @NonNull
-  public Task<GroupByQuerySnapshot> get(@NonNull Source source) {
+  public Task<GroupByQuerySnapshot> get(@NonNull GroupBySource source) {
     throw new RuntimeException("not implemented");
   }
 
   @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull EventListener<GroupByQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Executor executor, @NonNull EventListener<GroupByQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Activity activity, @NonNull EventListener<GroupByQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull MetadataChanges metadataChanges,
-      @NonNull EventListener<GroupByQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Executor executor,
-      @NonNull MetadataChanges metadataChanges,
-      @NonNull EventListener<GroupByQuerySnapshot> listener) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Activity activity,
-      @NonNull MetadataChanges metadataChanges,
-      @NonNull EventListener<GroupByQuerySnapshot> listener) {
+  public AggregateQuery.ListenConfig listen() {
     throw new RuntimeException("not implemented");
   }
 
@@ -84,11 +48,6 @@ public class GroupByQuery {
   // to an SQL "DISTINCT" operator.
   @NonNull
   public GroupByQuery aggregate(@NonNull AggregateField... fields) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public GroupByQuery withLatencyCompensationMode(AggregateExecutionMode mode) {
     throw new RuntimeException("not implemented");
   }
 
@@ -185,5 +144,32 @@ public class GroupByQuery {
   @Override
   public boolean equals(Object obj) {
     throw new RuntimeException("not implemented");
+  }
+
+  public static final class ListenConfig {
+
+    private ListenConfig() {}
+
+    @NonNull
+    public AggregateQuery.ListenConfig executeCallbacksOn(@NonNull Executor executor) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public AggregateQuery.ListenConfig scopeTo(@NonNull Activity executor) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public AggregateQuery.ListenConfig includeMetadataOnlyChanges(
+        boolean includeMetadataOnlyChanges) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public ListenerRegistration startDirectFromServer(
+        @NonNull EventListener<AggregateQuerySnapshot> listener) {
+      throw new RuntimeException("not implemented");
+    }
   }
 }

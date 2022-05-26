@@ -1229,14 +1229,6 @@ public class Query {
     throw new RuntimeException("not implemented");
   }
 
-  @NonNull
-  public AggregateQuery aggregate(
-      @NonNull AggregateExecutionMode mode,
-      @NonNull AggregateField field,
-      @NonNull AggregateField... fields) {
-    throw new RuntimeException("not implemented");
-  }
-
   // A convenience method for just getting the count of a query.
   // This method also helps with visibility of the "count" feature, since "aggregate" is
   // less obvious what you can do with it.
@@ -1246,31 +1238,12 @@ public class Query {
   }
 
   @NonNull
-  public AggregateQuery count(@NonNull AggregateExecutionMode mode) {
-    return aggregate(mode, AggregateField.count());
-  }
-
-  @NonNull
   public GroupByQuery groupBy(@NonNull String field1, @NonNull String... fields) {
     throw new RuntimeException("not implemented");
   }
 
   @NonNull
   public GroupByQuery groupBy(@NonNull FieldPath field1, @NonNull FieldPath... fields) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public GroupByQuery groupBy(
-      @NonNull AggregateExecutionMode mode, @NonNull String field1, @NonNull String... fields) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public GroupByQuery groupBy(
-      @NonNull AggregateExecutionMode mode,
-      @NonNull FieldPath field1,
-      @NonNull FieldPath... fields) {
     throw new RuntimeException("not implemented");
   }
 

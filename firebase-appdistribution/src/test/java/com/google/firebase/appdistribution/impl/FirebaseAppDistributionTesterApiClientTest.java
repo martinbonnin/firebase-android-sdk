@@ -229,7 +229,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
     awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(releaseTask, Status.AUTHENTICATION_FAILURE, "Resource not found");
+    assertTaskFailure(releaseTask, Status.UNKNOWN, ErrorMessages.NOT_FOUND_ERROR);
     verify(mockHttpsURLConnection).disconnect();
   }
 

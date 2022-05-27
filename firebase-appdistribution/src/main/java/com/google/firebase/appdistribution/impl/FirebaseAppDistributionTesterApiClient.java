@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,7 +51,14 @@ class FirebaseAppDistributionTesterApiClient {
   }
 
   private static final String APP_TESTERS_HOST = "firebaseapptesters.googleapis.com";
+  private static final String FIND_RELEASE_APK_HASH_PARAM = "apkHash";
+  private static final String FIND_RELEASE_IAS_ARTIFACT_ID_PARAM = "iasArtifactId";
   private static final String REQUEST_METHOD_GET = "GET";
+  private static final String REQUEST_METHOD_POST = "POST";
+  private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+  private static final String JSON_CONTENT_TYPE = "application/json";
+  private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
+  private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String API_KEY_HEADER = "x-goog-api-key";
   private static final String INSTALLATION_AUTH_HEADER = "X-Goog-Firebase-Installations-Auth";
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
@@ -114,6 +122,76 @@ class FirebaseAppDistributionTesterApiClient {
         });
   }
 
+  /**
+   * Fetches and returns the name of the installed release given the hash of the installed APK, or
+   * null if it could not be found.
+   */
+  @NonNull
+  Task<String> findReleaseUsingApkHash(String apkHash) {
+    return runWithFidAndToken(
+        (fid, token) -> findRelease(fid, token, FIND_RELEASE_APK_HASH_PARAM, apkHash));
+  }
+
+  /**
+   * Fetches and returns the name of the installed release given the IAS artifact ID of the
+   * installed app bundle, or null if it could not be found.
+   */
+  @NonNull
+  Task<String> findReleaseUsingIasArtifactId(String iasArtifactId) {
+    return runWithFidAndToken(
+        (fid, token) -> findRelease(fid, token, FIND_RELEASE_IAS_ARTIFACT_ID_PARAM, iasArtifactId));
+  }
+
+  private String findRelease(String fid, String token, String binaryIdParam, String binaryIdValue)
+      throws FirebaseAppDistributionException {
+    String path =
+        String.format(
+            "v1alpha/projects/%s/installations/%s/releases:find?%s=%s",
+            firebaseApp.getOptions().getGcmSenderId(), // Project number
+            fid,
+            binaryIdParam,
+            binaryIdValue);
+    String responseBody = makeGetRequest(path, token);
+    return parseJsonFieldFromResponse(responseBody, "release");
+  }
+
+  /** Creates a new feedback from the given text, and returns the feedback name. */
+  @NonNull
+  Task<String> createFeedback(String testerReleaseName, String feedbackText) {
+    return runWithFidAndToken(
+        (unused, token) -> {
+          LogWrapper.getInstance().i("Creating feedback for release: " + testerReleaseName);
+          String path = String.format("v1alpha/%s/feedback", testerReleaseName);
+          String requestBody = buildCreateFeedbackBody(feedbackText).toString();
+          String responseBody = makePostRequest(path, token, requestBody);
+          return parseJsonFieldFromResponse(responseBody, "name");
+        });
+  }
+
+  /** Commits the feedback with the given name. */
+  @NonNull
+  Task<Void> commitFeedback(String feedbackName) {
+    return runWithFidAndToken(
+        (unused, token) -> {
+          LogWrapper.getInstance().i("Committing feedback: " + feedbackName);
+          String path = "v1alpha/" + feedbackName + ":commit";
+          makePostRequest(path, token, /* requestBody= */ "");
+          return null;
+        });
+  }
+
+  private static JSONObject buildCreateFeedbackBody(String feedbackText)
+      throws FirebaseAppDistributionException {
+    JSONObject feedbackJsonObject = new JSONObject();
+    try {
+      feedbackJsonObject.put("text", feedbackText);
+    } catch (JSONException e) {
+      throw new FirebaseAppDistributionException(
+          ErrorMessages.JSON_SERIALIZATION_ERROR, Status.UNKNOWN, e);
+    }
+    return feedbackJsonObject;
+  }
+
   private String readResponse(HttpsURLConnection connection)
       throws FirebaseAppDistributionException, IOException {
     int responseCode = connection.getResponseCode();
@@ -130,6 +208,37 @@ class FirebaseAppDistributionTesterApiClient {
     HttpsURLConnection connection = null;
     try {
       connection = openHttpsUrlConnection(url, token);
+      return readResponse(connection);
+    } catch (IOException e) {
+      throw new FirebaseAppDistributionException(
+          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
+    }
+  }
+
+  private String makePostRequest(String path, String token, String requestBody)
+      throws FirebaseAppDistributionException {
+    String url = String.format("https://%s/%s", APP_TESTERS_HOST, path);
+    HttpsURLConnection connection = null;
+    try {
+      connection = openHttpsUrlConnection(url, token);
+      connection.setDoOutput(true);
+      connection.setRequestMethod(REQUEST_METHOD_POST);
+      connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      connection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      connection.getOutputStream();
+      GZIPOutputStream gzipOutputStream = new GZIPOutputStream(connection.getOutputStream());
+      try {
+        gzipOutputStream.write(requestBody.getBytes("UTF-8"));
+      } catch (IOException e) {
+        throw new FirebaseAppDistributionException(
+            "Error compressing network request body", Status.UNKNOWN, e);
+      } finally {
+        gzipOutputStream.close();
+      }
       return readResponse(connection);
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
@@ -204,6 +313,27 @@ class FirebaseAppDistributionTesterApiClient {
     }
   }
 
+  private String parseJsonFieldFromResponse(String responseBody, String fieldName)
+      throws FirebaseAppDistributionException {
+    JSONObject responseJson;
+    try {
+      responseJson = new JSONObject(responseBody);
+    } catch (JSONException e) {
+      LogWrapper.getInstance().e(TAG + "Error parsing the response.", e);
+      throw new FirebaseAppDistributionException(
+          ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
+    }
+
+    try {
+      return responseJson.getString(fieldName);
+    } catch (JSONException e) {
+      LogWrapper.getInstance()
+          .e(TAG + String.format("Field '%s' missing from response", fieldName), e);
+      throw new FirebaseAppDistributionException(
+          ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
+    }
+  }
+
   private FirebaseAppDistributionException getExceptionForHttpResponse(int responseCode) {
     switch (responseCode) {
       case 400:
@@ -215,8 +345,8 @@ class FirebaseAppDistributionTesterApiClient {
         return new FirebaseAppDistributionException(
             ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
       case 404:
-        return new FirebaseAppDistributionException(
-            "Resource not found", Status.AUTHENTICATION_FAILURE);
+        // TODO(lkellogg): Need to provide more tailored error messages for 404s
+        return new FirebaseAppDistributionException(ErrorMessages.NOT_FOUND_ERROR, Status.UNKNOWN);
       case 408:
       case 504:
         return new FirebaseAppDistributionException(
